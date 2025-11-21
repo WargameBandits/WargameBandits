@@ -53,12 +53,53 @@ const ChallengesPage: React.FC = () => {
     }
   ];
 
+  // useEffect(() => {
+  //   // 실제 구현시 GitHub API에서 challenges.json 가져오기
+  //   setTimeout(() => {
+  //     setChallenges(mockChallenges);
+  //     setLoading(false);
+  //   }, 1000);
+  // }, []);
   useEffect(() => {
-    // 실제 구현시 GitHub API에서 challenges.json 가져오기
-    setTimeout(() => {
-      setChallenges(mockChallenges);
-      setLoading(false);
-    }, 1000);
+    const fetchChallenges = async () => {
+      try {
+        // 1. 환경 변수에서 주소 가져오기 (아까 만든 .env 파일)
+        // 혹시 .env가 안 먹힐 때를 대비해 || 뒤에 직접 주소를 넣어도 됩니다.
+        const baseUrl = process.env.REACT_APP_API_URL || 'https://wargame-server-gwol.onrender.com';
+
+        // 2. 진짜 요청 보내기
+        const response = await fetch(`${baseUrl}/challenges`);
+        const data = await response.json();
+
+        console.log("백엔드에서 받은 데이터:", data); // 콘솔 확인용
+
+        // 3. 데이터 모양 맞추기 (백엔드랑 프론트엔드 변수명이 달라서 해줘야 함!)
+        // 백엔드: score / 프론트: points
+        const formattedData = data.map((item: any) => ({
+          id: item.id,
+          title: item.title,
+          description: item.description,
+          category: item.category,
+          points: item.score, // ★ 여기가 핵심! (백엔드는 score, 프론트는 points)
+
+          // 아래는 아직 백엔드에 없는 정보라 임시로 채워줍니다.
+          subjectTag: 'Backend',
+          author: 'Admin',
+          authorGithub: 'admin',
+          solvers: [],
+          createdAt: new Date().toISOString().split('T')[0],
+          isActive: true
+        }));
+
+        setChallenges(formattedData);
+      } catch (error) {
+        console.error("데이터 가져오기 실패 ㅠㅠ:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchChallenges();
   }, []);
 
   const categories = ['all', 'web', 'pwn', 'reverse', 'crypto', 'forensics', 'misc'];
@@ -66,8 +107,8 @@ const ChallengesPage: React.FC = () => {
   const filteredChallenges = challenges.filter(challenge => {
     const matchesCategory = selectedCategory === 'all' || challenge.category === selectedCategory;
     const matchesSearch = challenge.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          challenge.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          (challenge.subjectTag?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false);
+      challenge.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (challenge.subjectTag?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false);
     return matchesCategory && matchesSearch;
   });
 
@@ -121,11 +162,10 @@ const ChallengesPage: React.FC = () => {
               <button
                 key={category}
                 onClick={() => setSelectedCategory(category)}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                  selectedCategory === category
-                    ? 'bg-cyan-600 text-white'
-                    : 'bg-slate-800 text-gray-300 hover:bg-slate-700'
-                }`}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${selectedCategory === category
+                  ? 'bg-cyan-600 text-white'
+                  : 'bg-slate-800 text-gray-300 hover:bg-slate-700'
+                  }`}
               >
                 {category.charAt(0).toUpperCase() + category.slice(1)}
               </button>
