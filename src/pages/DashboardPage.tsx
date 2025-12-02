@@ -1,12 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Challenge, LeaderboardEntry } from '../types';
+import SideBar from '../components/SideBar'; // Sidebar 컴포넌트 import (경로에 맞게 수정 필요)
 
 const DashboardPage: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [selectedTab, setSelectedTab] = useState<'labs' | 'events' | 'leaderboard'>('labs');
+  // selectedTab 상태는 Sidebar 컴포넌트 내부에서 라우팅으로 처리되므로 제거했습니다.
   
   // Mock data
   const recentChallenges: Challenge[] = [
@@ -68,66 +69,11 @@ const DashboardPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-dark-900">
-      {/* Sidebar */}
-      <div className="fixed left-0 top-0 h-full w-64 bg-dark-800 border-r border-gray-800 z-20">
-        {/* Logo */}
-        <div className="p-6 border-b border-gray-800">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-accent-pink to-accent-purple rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-xl">⚔️</span>
-            </div>
-            <span className="text-xl font-bold text-white">WARGAME</span>
-          </div>
-        </div>
-
-        {/* Navigation */}
-        <nav className="p-4">
-          <Link to="/dashboard" className="flex items-center space-x-3 px-4 py-3 rounded-lg bg-dark-700 text-white mb-2">
-            <span>🏠</span>
-            <span>Home</span>
-          </Link>
-          
-          <div className="mb-2">
-            <button
-              onClick={() => setSelectedTab('labs')}
-              className={`flex items-center justify-between w-full px-4 py-3 rounded-lg transition-colors ${
-                selectedTab === 'labs' ? 'bg-dark-700 text-white' : 'text-gray-400 hover:bg-dark-700'
-              }`}
-            >
-              <div className="flex items-center space-x-3">
-                <span>🧪</span>
-                <span>Labs</span>
-              </div>
-              <span className="text-xs">▼</span>
-            </button>
-            {selectedTab === 'labs' && (
-              <div className="ml-8 mt-2 space-y-1">
-                <Link to="/challenges?category=web" className="block px-4 py-2 text-gray-400 hover:text-white">Web</Link>
-                <Link to="/challenges?category=crypto" className="block px-4 py-2 text-gray-400 hover:text-white">Crypto</Link>
-                <Link to="/challenges?category=pwn" className="block px-4 py-2 text-gray-400 hover:text-white">Pwn</Link>
-                <Link to="/challenges?category=reverse" className="block px-4 py-2 text-gray-400 hover:text-white">Reverse</Link>
-              </div>
-            )}
-          </div>
-
-          <Link to="/events" className="flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-400 hover:bg-dark-700 mb-2">
-            <span>📅</span>
-            <span>Events</span>
-          </Link>
-
-          <Link to="/leaderboard" className="flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-400 hover:bg-dark-700">
-            <span>🏆</span>
-            <span>Leaderboard</span>
-          </Link>
-        </nav>
-
-        {/* Premium Button */}
-        <div className="absolute bottom-8 left-4 right-4">
-          <button className="w-full px-4 py-3 bg-gradient-to-r from-accent-pink to-accent-purple text-white rounded-lg font-medium hover:opacity-90 transition-opacity">
-            🚀 Go Premium
-          </button>
-        </div>
-      </div>
+      {/* 기존의 하드코딩된 사이드바 코드를 제거하고 
+        Sidebar 컴포넌트로 대체했습니다.
+        위치는 absolute/fixed 레이아웃상 동일하게 유지됩니다.
+      */}
+      <SideBar></SideBar>
 
       {/* Main Content */}
       <div className="ml-64 p-8">

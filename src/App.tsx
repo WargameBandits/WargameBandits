@@ -3,7 +3,9 @@ import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import LandingPage from './pages/LandingPage';
 import DashboardPage from './pages/DashboardPage';
+import EventsPage from './pages/EventsPage';
 import ChallengesPage from './pages/ChallengesPage';
+import ChallengeDetailPage from './pages/ChallengeDetailPage';
 import LeaderboardPage from './pages/LeaderboardPage';
 
 // Protected Route Component
@@ -53,9 +55,22 @@ function AppContent() {
         </ProtectedRoute>
       } />
       
+      {/* Events Page Route 추가됨 */}
+      <Route path="/events" element={
+        <ProtectedRoute>
+          <EventsPage />
+        </ProtectedRoute>
+      } />
+      
       <Route path="/challenges" element={
         <ProtectedRoute>
           <ChallengesPage />
+        </ProtectedRoute>
+      } />
+
+      <Route path="/challenge/:id" element={
+        <ProtectedRoute>
+          <ChallengeDetailPage />
         </ProtectedRoute>
       } />
       

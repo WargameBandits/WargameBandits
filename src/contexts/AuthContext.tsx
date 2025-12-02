@@ -56,13 +56,34 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const login = () => {
+    // [개발용 임시 코드] 깃허브 OAuth 대신 즉시 로그인 처리
+    const mockUser: User = {
+      id: 'dev-1',
+      username: 'DevHacker', // 테스트하고 싶은 이름
+      githubUsername: 'ghost', // 깃허브 프로필 사진용 (ghost는 깃허브 기본 이미지)
+      role: 'admin', // 'admin'으로 설정해서 Create Challenge 메뉴도 테스트 해보세요
+      points: 1337,
+      solvedChallenges: [1, 2],
+      createdAt: new Date().toISOString()
+    };
+
+    // 로컬 스토리지에 저장 (새로고침 해도 유지되도록)
+    localStorage.setItem(config.storage.user, JSON.stringify(mockUser));
+    localStorage.setItem(config.storage.authToken, 'mock_token_for_dev');
+
+    // 상태 업데이트
+    setAuthState({
+      isAuthenticated: true,
+      user: mockUser,
+      loading: false
+    });
     // GitHub OAuth login
-    const authUrl = `https://github.com/login/oauth/authorize?` +
-      `client_id=${config.githubOAuth.clientId}&` +
-      `redirect_uri=${encodeURIComponent(config.githubOAuth.redirectUri)}&` +
-      `scope=${encodeURIComponent(config.githubOAuth.scope)}`;
+    //const authUrl = `https://github.com/login/oauth/authorize?` +
+    //  `client_id=${config.githubOAuth.clientId}&` +
+    //  `redirect_uri=${encodeURIComponent(config.githubOAuth.redirectUri)}&` +
+    //  `scope=${encodeURIComponent(config.githubOAuth.scope)}`;
     
-    window.location.href = authUrl;
+    //window.location.href = authUrl;
   };
 
   const logout = () => {
