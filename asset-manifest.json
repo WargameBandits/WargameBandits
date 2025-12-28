@@ -1,15 +1,15 @@
 {
   "files": {
-    "main.css": "/WargameBandits/static/css/main.367468d7.css",
-    "main.js": "/WargameBandits/static/js/main.5a597a8d.js",
+    "main.css": "/WargameBandits/static/css/main.2e9bdcc2.css",
+    "main.js": "/WargameBandits/static/js/main.99116457.js",
     "static/js/453.9b036177.chunk.js": "/WargameBandits/static/js/453.9b036177.chunk.js",
     "index.html": "/WargameBandits/index.html",
-    "main.367468d7.css.map": "/WargameBandits/static/css/main.367468d7.css.map",
-    "main.5a597a8d.js.map": "/WargameBandits/static/js/main.5a597a8d.js.map",
+    "main.2e9bdcc2.css.map": "/WargameBandits/static/css/main.2e9bdcc2.css.map",
+    "main.99116457.js.map": "/WargameBandits/static/js/main.99116457.js.map",
     "453.9b036177.chunk.js.map": "/WargameBandits/static/js/453.9b036177.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.367468d7.css",
-    "static/js/main.5a597a8d.js"
+    "static/css/main.2e9bdcc2.css",
+    "static/js/main.99116457.js"
   ]
 }
