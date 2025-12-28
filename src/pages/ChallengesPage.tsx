@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Challenge } from '../types';
 import SideBar from '../components/SideBar';
+import toast from 'react-hot-toast'; // 알림용
 
 const ChallengesPage: React.FC = () => {
   const { user } = useAuth();
@@ -14,86 +15,48 @@ const ChallengesPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
 
-  // Mock data - 실제로는 GitHub API나 Serverless Function에서 가져옴
-  const mockChallenges: Challenge[] = [
-    {
-      id: 1,
-      title: "SQL Injection 기초",
-      description: "데이터베이스 과목에서 배운 SQL을 활용한 문제",
-      category: "web",
-      difficulty: "easy",
-      subjectTag: "데이터베이스",
-      points: 100,
-      author: "kimh",
-      authorGithub: "kimh",
-      solvers: ["user1", "user2"],
-      firstBlood: "user1",
-      createdAt: "2024-11-01",
-      isActive: true
-    },
-    {
-      id: 2,
-      title: "Buffer Overflow 입문",
-      description: "시스템 프로그래밍에서 배운 메모리 구조 활용",
-      category: "pwn",
-      difficulty: "medium",
-      subjectTag: "시스템프로그래밍",
-      points: 150,
-      author: "lee",
-      authorGithub: "lee",
-      solvers: ["user1"],
-      firstBlood: "user1",
-      createdAt: "2024-11-02",
-      isActive: true
-    },
-    {
-      id: 3,
-      title: "RSA 암호 해독",
-      description: "정보보안 과목의 RSA 암호화 알고리즘",
-      category: "crypto",
-      difficulty: "hard",
-      subjectTag: "정보보안",
-      points: 200,
-      author: "park",
-      authorGithub: "park",
-      solvers: [],
-      createdAt: "2024-11-03",
-      isActive: true
-    },
-    {
-      id: 4,
-      title: "XSS Challenge",
-      description: "Cross-Site Scripting 취약점을 찾아보세요",
-      category: "web",
-      difficulty: "medium",
-      points: 120,
-      author: "admin",
-      authorGithub: "admin",
-      solvers: ["user3"],
-      createdAt: "2024-11-04",
-      isActive: true
-    },
-    {
-      id: 5,
-      title: "Binary Analysis",
-      description: "주어진 바이너리를 분석하여 플래그를 찾으세요",
-      category: "reverse",
-      difficulty: "hard",
-      points: 250,
-      author: "kim",
-      authorGithub: "kim",
-      solvers: [],
-      createdAt: "2024-11-05",
-      isActive: true
-    }
-  ];
-
+  // ✅ [수정됨] 실제 API에서 데이터 가져오기
   useEffect(() => {
-    // 실제 구현시 GitHub API에서 challenges.json 가져오기
-    setTimeout(() => {
-      setChallenges(mockChallenges);
-      setLoading(false);
-    }, 500);
+    const fetchChallenges = async () => {
+      try {
+        const response = await fetch('/api/challenges');
+        
+        if (!response.ok) {
+          throw new Error('데이터를 불러오는데 실패했습니다.');
+        }
+
+        const data = await response.json();
+
+        // 🛠️ 데이터 매핑 (Backend JSON -> Frontend UI 구조 변환)
+        // 백엔드 JSON이 간단하므로, UI에 필요한 필드가 없으면 기본값을 채워줍니다.
+        const mappedChallenges: Challenge[] = data.map((item: any) => ({
+          id: item.id, // API의 문자열 ID (web-01 등) 그대로 사용
+          title: item.title,
+          description: item.description,
+          category: item.category.toLowerCase(), // 소문자로 통일
+          difficulty: item.difficulty.toLowerCase(),
+          points: item.points,
+          // JSON에 없는 필드는 기본값 처리
+          subjectTag: item.category, 
+          author: "Admin",
+          authorGithub: "admin",
+          // solvedBy(숫자)를 solvers(배열)로 변환 (UI 호환성 유지)
+          solvers: Array(item.solvedBy || 0).fill('user'), 
+          firstBlood: item.solvedBy > 0 ? 'user1' : undefined,
+          createdAt: new Date().toISOString(),
+          isActive: true
+        }));
+
+        setChallenges(mappedChallenges);
+      } catch (error) {
+        console.error("Fetch error:", error);
+        toast.error("문제 목록을 불러오지 못했습니다.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchChallenges();
   }, []);
 
   useEffect(() => {
@@ -217,9 +180,10 @@ const ChallengesPage: React.FC = () => {
             <div className="text-gray-400">
               <span className="text-white font-bold">{filteredChallenges.length}</span> challenges found
             </div>
+            {/* solvers는 배열이므로 length 사용 */}
             <div className="text-gray-400">
               <span className="text-green-400 font-bold">
-                {filteredChallenges.filter(c => c.solvers.includes(user?.username || '')).length}
+                {filteredChallenges.filter(c => c.solvers?.includes(user?.username || '')).length}
               </span> solved
             </div>
             <div className="text-gray-400">
@@ -275,7 +239,8 @@ const ChallengesPage: React.FC = () => {
                       <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                       </svg>
-                      {challenge.solvers.length}
+                      {/* solvers가 undefined일 경우 대비 */}
+                      {challenge.solvers?.length || 0}
                     </div>
                     {challenge.subjectTag && (
                       <span className="text-xs px-2 py-1 bg-dark-700 text-gray-400 rounded">
@@ -289,7 +254,7 @@ const ChallengesPage: React.FC = () => {
                 </div>
 
                 {/* Solved Indicator */}
-                {challenge.solvers.includes(user?.username || '') && (
+                {challenge.solvers?.includes(user?.username || '') && (
                   <div className="mt-3 flex items-center text-green-400 text-sm font-medium">
                     <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />

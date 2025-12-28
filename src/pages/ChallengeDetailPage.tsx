@@ -1,56 +1,85 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import toast, { Toaster } from 'react-hot-toast'; // 알림 추가
 
-// 상세 페이지용 데이터 타입 정의
+// 인터페이스 수정 (JSON 데이터 구조에 맞춤)
 interface ChallengeDetail {
-  id: number;
+  id: string; // JSON의 id는 문자열 (web-01 등)
   title: string;
   category: string;
-  difficulty: 'easy' | 'medium' | 'hard';
+  difficulty: 'Easy' | 'Medium' | 'Hard'; // 대문자로 수정
   points: number;
-  solversCount: number;
-  firstBlood?: {
-    username: string;
-    time: string;
-  };
+  solvedBy: number; // solversCount -> solvedBy
   description: string;
-  author: string;
+  // firstBlood, author 등은 JSON에 없으면 optional로 처리
+  firstBlood?: { username: string; time: string; };
+  author?: string;
   files?: boolean;
-  hasInstance: boolean;
 }
 
 const ChallengeDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
+  
   const [loading, setLoading] = useState(true);
   const [challenge, setChallenge] = useState<ChallengeDetail | null>(null);
   const [activeTab, setActiveTab] = useState<'details' | 'activity'>('details');
   const [instanceStatus, setInstanceStatus] = useState<'offline' | 'starting' | 'online'>('offline');
+  
+  // Flag 입력 관리 State
+  const [flagInput, setFlagInput] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Mock Data (스크린샷 내용 반영)
+  // 1. 데이터 가져오기 (API 연동)
   useEffect(() => {
-    // 실제로는 id를 이용해 fetch 해야 함
-    setTimeout(() => {
-      setChallenge({
-        id: Number(id),
-        title: "NameTag",
-        category: "PWN",
-        difficulty: "medium",
-        points: 180,
-        solversCount: 32,
-        firstBlood: {
-          username: "markuche",
-          time: "9H 0M 41S"
-        },
-        description: "Manage a few nametags using our custom service. Add, edit, and delete names... but can you uncover the secret?",
-        author: "Flagyard",
-        files: true,
-        hasInstance: true
-      });
-      setLoading(false);
-    }, 500);
+    const fetchChallenge = async () => {
+      try {
+        const response = await fetch(`/api/challenge?id=${id}`);
+        if (!response.ok) throw new Error('Failed to load challenge');
+        const data = await response.json();
+        setChallenge(data);
+      } catch (error) {
+        console.error(error);
+        toast.error("문제를 불러오지 못했습니다.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchChallenge();
   }, [id]);
+
+  // 2. 플래그 제출 핸들러 (API 연동)
+  const handleSubmitFlag = async () => {
+    if (!flagInput.trim()) {
+      toast('플래그를 입력해주세요.', { icon: '🤔' });
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const response = await fetch('/api/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ challengeId: id, flag: flagInput }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        toast.success(result.message);
+        setFlagInput(''); // 입력창 초기화
+        // 여기에 정답 맞췄을 때 폭죽 효과 등을 추가할 수 있습니다.
+      } else {
+        toast.error(result.message);
+      }
+    } catch (error) {
+      toast.error('서버 오류가 발생했습니다.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const handleStartInstance = () => {
     setInstanceStatus('starting');
@@ -58,7 +87,8 @@ const ChallengeDetailPage: React.FC = () => {
   };
 
   const getDifficultyBadge = (diff: string) => {
-    switch (diff) {
+    const d = diff.toLowerCase();
+    switch (d) {
       case 'easy': return 'bg-green-500/20 text-green-500 border-green-500/20';
       case 'medium': return 'bg-yellow-500/20 text-yellow-500 border-yellow-500/20';
       case 'hard': return 'bg-red-500/20 text-red-500 border-red-500/20';
@@ -71,6 +101,9 @@ const ChallengeDetailPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-dark-900 flex">
+      {/* 알림용 Toaster 컴포넌트 */}
+      <Toaster position="top-right" toastOptions={{ style: { background: '#333', color: '#fff' } }} />
+
       {/* 🟢 SIDEBAR (공통) */}
       <div className="fixed left-0 top-0 h-full w-64 bg-dark-800 border-r border-gray-800 z-20">
         <div className="p-6 border-b border-gray-800">
@@ -83,13 +116,11 @@ const ChallengeDetailPage: React.FC = () => {
         </div>
         <nav className="p-4">
           <Link to="/dashboard" className="flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-400 hover:bg-dark-700 mb-2">
-            <span>🏠</span>
-            <span>Home</span>
+            <span>🏠</span><span>Home</span>
           </Link>
           <div className="mb-2">
             <Link to="/challenges" className="flex items-center space-x-3 px-4 py-3 rounded-lg bg-dark-700 text-white mb-2">
-               <span>🧪</span>
-               <span>Labs</span>
+               <span>🧪</span><span>Labs</span>
             </Link>
             <div className="ml-8 mt-1 space-y-1 border-l border-gray-700 pl-3">
               {['Web', 'Crypto', 'Pwn', 'Reverse'].map((cat) => (
@@ -107,7 +138,7 @@ const ChallengeDetailPage: React.FC = () => {
         {/* Top Header & Breadcrumbs */}
         <div className="flex justify-between items-start mb-8">
           <div className="text-gray-500 text-sm font-medium">
-             Training Labs <span className="mx-2">/</span> {challenge.category} <span className="mx-2">/</span> <span className="text-white">{challenge.title}</span>
+              Training Labs <span className="mx-2">/</span> {challenge.category} <span className="mx-2">/</span> <span className="text-white">{challenge.title}</span>
           </div>
           <div className="flex items-center space-x-3">
             <img src={`https://github.com/${user?.githubUsername || 'ghost'}.png`} alt="Profile" className="w-10 h-10 rounded-full border-2 border-accent-pink" />
@@ -137,12 +168,12 @@ const ChallengeDetailPage: React.FC = () => {
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
             </div>
             <div>
-              <div className="text-gray-400 text-xs uppercase font-bold">Flag Hacks</div>
-              <div className="text-white text-xl font-bold">{challenge.solversCount} Hacks</div>
+              <div className="text-gray-400 text-xs uppercase font-bold">Solved By</div>
+              <div className="text-white text-xl font-bold">{challenge.solvedBy} Users</div>
             </div>
           </div>
 
-          {/* First Blood */}
+          {/* First Blood (Optional) */}
           <div className="bg-dark-800 rounded-xl p-6 border border-gray-800 flex items-center space-x-4">
             <div className="p-3 bg-red-500/10 rounded-lg text-red-500">
                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" /></svg>
@@ -150,9 +181,14 @@ const ChallengeDetailPage: React.FC = () => {
             <div>
               <div className="text-gray-400 text-xs uppercase font-bold">First Blood</div>
               <div className="text-white text-sm font-bold flex items-center">
-                 <img src={`https://github.com/${challenge.firstBlood?.username}.png`} className="w-5 h-5 rounded-full mr-2" alt="" />
-                 {challenge.firstBlood?.username} 
-                 <span className="text-red-500 ml-2 text-xs">{challenge.firstBlood?.time}</span>
+                 {challenge.firstBlood ? (
+                    <>
+                      <img src={`https://github.com/${challenge.firstBlood.username}.png`} className="w-5 h-5 rounded-full mr-2" alt="" />
+                      {challenge.firstBlood.username} 
+                    </>
+                 ) : (
+                    <span className="text-gray-500">Not solved yet</span>
+                 )}
               </div>
             </div>
           </div>
@@ -163,7 +199,6 @@ const ChallengeDetailPage: React.FC = () => {
           <div className="flex justify-between items-start relative z-10">
             <div className="flex space-x-6">
               <div className="w-20 h-20 bg-dark-700 rounded-2xl flex items-center justify-center border border-gray-700 text-gray-400 font-mono text-xs">
-                {/* Binary Icon Mock */}
                 <div className="text-center opacity-50">
                   0101<br/>0011
                 </div>
@@ -179,7 +214,7 @@ const ChallengeDetailPage: React.FC = () => {
                 <p className="text-gray-300 max-w-3xl">{challenge.description}</p>
               </div>
             </div>
-            <div className="text-gray-500 text-sm">By {challenge.author}</div>
+            <div className="text-gray-500 text-sm">By {challenge.author || 'Admin'}</div>
           </div>
         </div>
 
@@ -274,12 +309,24 @@ const ChallengeDetailPage: React.FC = () => {
                 <label className="text-gray-400 text-sm mb-2 block">The Flag</label>
                 <input 
                   type="text" 
-                  placeholder="Enter flag" 
+                  value={flagInput}
+                  onChange={(e) => setFlagInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSubmitFlag()}
+                  placeholder="Enter flag (e.g., FLAG{...})" 
                   className="w-full bg-dark-900 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-accent-pink focus:ring-1 focus:ring-accent-pink transition-all"
                 />
               </div>
-              <button className="px-8 py-2 bg-[#be123c] hover:bg-[#9f1239] text-white rounded-lg font-bold transition-colors">
-                Submit
+              <button 
+                onClick={handleSubmitFlag}
+                disabled={isSubmitting}
+                className="px-8 py-2 bg-[#be123c] hover:bg-[#9f1239] disabled:bg-gray-700 disabled:cursor-not-allowed text-white rounded-lg font-bold transition-colors flex items-center"
+              >
+                {isSubmitting ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    Checking...
+                  </>
+                ) : 'Submit'}
               </button>
             </div>
           </div>

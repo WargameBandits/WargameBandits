@@ -14,4 +14,14 @@ export default defineConfig({
   define: {
     'process.env': {},
   },
+
+  server: {
+    proxy: {
+      '/api': {
+        target: 'https://wargame-server.vercel.app', 
+        changeOrigin: true,
+        secure: false,
+      },
+    },
+  },
 });
