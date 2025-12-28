@@ -28,14 +28,13 @@ jobs:
     - name: Build project
       run: npm run build
       env:
-        REACT_APP_GITHUB_CLIENT_ID: ${{ secrets.GITHUB_CLIENT_ID }}
-        REACT_APP_API_URL: ${{ secrets.API_URL }}
-        REACT_APP_REDIRECT_URI: https://WargameBandits.github.io/WargameBandits/callback
+        VITE_GITHUB_CLIENT_ID: ${{ secrets.GITHUB_CLIENT_ID }}
+        VITE_API_URL: ${{ secrets.API_URL }}
+        VITE_REDIRECT_URI: https://WargameBandits.github.io/WargameBandits/callback
     
     - name: Deploy to GitHub Pages
       uses: peaceiris/actions-gh-pages@v3
       if: github.ref == 'refs/heads/main'
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./build
-        cname: wargamebandits.com  # 커스텀 도메인 사용시
+        publish_dir: ./dist  
