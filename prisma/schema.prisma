@@ -1,0 +1,82 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model challenge {
+  id             Int              @id(map: "PK_5f31455ad09ea6a836a06871b7a") @default(autoincrement())
+  title          String           @db.VarChar
+  description    String
+  flagHash       String           @db.VarChar
+  points         Int
+  category       String           @db.VarChar
+  createdAt      DateTime         @default(now()) @db.Timestamp(6)
+  updatedAt      DateTime         @default(now()) @db.Timestamp(6)
+  creatorId      Int?
+  user           user?            @relation(fields: [creatorId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_d5860123cd54048208d5c3ed4f9")
+  challenge_file challenge_file[]
+  first_blood    first_blood?
+  submission     submission[]
+}
+
+model challenge_file {
+  id           Int        @id(map: "PK_0490df1a8586107ca5542691512") @default(autoincrement())
+  fileUrl      String     @db.VarChar
+  originalName String     @db.VarChar
+  size         Int
+  uploadedAt   DateTime   @default(now()) @db.Timestamp(6)
+  challengeId  Int?
+  challenge    challenge? @relation(fields: [challengeId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_4693cbf95c25801531bce159e5b")
+}
+
+model first_blood {
+  id          Int        @id(map: "PK_ef448d56fb8ab3c741b83b085b6") @default(autoincrement())
+  achievedAt  DateTime   @default(now()) @db.Timestamp(6)
+  challengeId Int?       @unique(map: "REL_e3d84d4c94db8adb5a425e82eb")
+  userId      Int?
+  user        user?      @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_77d15f548fe52daa23ea17a972b")
+  challenge   challenge? @relation(fields: [challengeId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_e3d84d4c94db8adb5a425e82eba")
+}
+
+model playing_with_neon {
+  id    Int    @id @default(autoincrement())
+  name  String
+  value Float? @db.Real
+}
+
+model submission {
+  id          Int        @id(map: "PK_7faa571d0e4a7076e85890c9bd0") @default(autoincrement())
+  isCorrect   Boolean
+  submittedAt DateTime   @default(now()) @db.Timestamp(6)
+  userId      Int?
+  challengeId Int?
+  user        user?      @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_7bd626272858ef6464aa2579094")
+  challenge   challenge? @relation(fields: [challengeId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_d3af0954e5f8c6c9ee89e9dd989")
+}
+
+model user {
+  id          Int           @id(map: "PK_cace4a159ff9f2512dd42373760") @default(autoincrement())
+  username    String        @unique(map: "UQ_78a916df40e02a9deb1c4b75edb") @db.VarChar
+  email       String?       @db.VarChar
+  githubId    String?       @db.VarChar
+  role        String        @default("user") @db.VarChar
+  createdAt   DateTime      @default(now()) @db.Timestamp(6)
+  updatedAt   DateTime      @default(now()) @db.Timestamp(6)
+  challenge   challenge[]
+  first_blood first_blood[]
+  submission  submission[]
+  user_score  user_score?
+}
+
+model user_score {
+  id           Int      @id(map: "PK_d8c3a8d078981d6afd578a11dd7") @default(autoincrement())
+  totalScore   Int      @default(0)
+  solvedCount  Int      @default(0)
+  lastSolvedAt DateTime @default(now()) @db.Timestamp(6)
+  userId       Int?     @unique(map: "REL_36c4c82b03c4bd341f2faea93a")
+  user         user?    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_36c4c82b03c4bd341f2faea93a7")
+}
